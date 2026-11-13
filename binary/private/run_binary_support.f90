@@ -441,8 +441,9 @@ contains
                ! Avoid repeating the accretor when using the implicit scheme plus
                ! rotation and implicit winds. When this happens the accretor won't
                ! usually care about the result of the evolution of the donor.
-               if (j == b% a_i .and. b% num_tries >0 .and. s% was_in_implicit_wind_limit) &
-                  cycle
+               if (j == b% a_i .and. b% num_tries > 0) then
+                  if (b% s_accretor% was_in_implicit_wind_limit) cycle
+               end if
 
                ! fix sync timescales to zero. If synching stars these will be
                ! updated at each star_evolve_step
@@ -491,8 +492,9 @@ contains
                   end if
                   id = b% star_ids(j)
 
-                  if (j == b% a_i .and. b% num_tries >0 .and. s% was_in_implicit_wind_limit) &
-                     cycle
+                  if (j == b% a_i .and. b% num_tries > 0) then
+                     if (b% s_accretor% was_in_implicit_wind_limit) cycle
+                  end if
 
                   ! set accretion composition
                   if (.not. b% CE_flag) then
@@ -595,8 +597,9 @@ contains
                   ! rotation and implicit winds. When this happens the accretor won't
                   ! usually care about the result of the evolution of the donor.
 
-                  if (i == b% a_i .and. b% num_tries >0 .and. s% was_in_implicit_wind_limit) &
-                     cycle
+                  if (i == b% a_i .and. b% num_tries > 0) then
+                     if (b% s_accretor% was_in_implicit_wind_limit) cycle
+                  end if
                   result = worst_result(result, star_prepare_to_redo(id))
                end do
                result = worst_result(result, binary_prepare_to_redo(b))
