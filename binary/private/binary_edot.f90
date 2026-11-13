@@ -147,7 +147,8 @@
        type (binary_info), pointer :: b
        type (star_info), pointer :: s
        logical, intent(in) :: has_convective_envelope
-       real(dp) :: m, porb, r_phot, osep, qratio, omega_s, omega_sync, kdivt
+       real(dp) :: m, porb, r_phot, osep, qratio, omega_s, omega_sync, kdivt, Ftid
+       integer :: s_i
        integer, intent(out) :: ierr
 
        edot_tidal = 0d0
@@ -159,17 +160,24 @@
 
        qratio = b% m(b% a_i) / b% m(b% d_i)
        if (is_donor(b, s)) then
+          s_i = b% d_i
           m = b% m(b% d_i)
           r_phot = b% r(b% d_i)
        else
+          s_i = b% a_i
           qratio = 1.0d0/qratio
           m = b% m(b% a_i)
           r_phot = b% r(b% a_i)
        end if
+       if (s_i == 1) then
+          Ftid = b% Ftid_1
+       else
+          Ftid = b% Ftid_2
+       end if
 
        ! eq. (10) of Hut, P. 1981, A&A, 99, 126
        edot_tidal = -27.0d0*qratio*(1+qratio)*pow8(r_phot/osep) &
-           * b% eccentricity*pow(1-pow2(b% eccentricity),-6.5d0)*b% Ftid_1
+           * b% eccentricity*pow(1-pow2(b% eccentricity),-6.5d0)*Ftid
        ! add multiplication by (k/T), eq. (29) of Hurley et al. 2002
        kdivt = k_div_T(b, s, has_convective_envelope, ierr)
        if(ierr/=0) return
