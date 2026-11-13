@@ -148,9 +148,7 @@
 
             end do
 
-            do k=1, s% nz
-               b% CE_m(:) = s% m(:s% nz)
-            end do
+            b% CE_m(:) = s% m(:s% nz)
 
             ! setup values of starting model for the interpolant
             do k=1, s% nz
