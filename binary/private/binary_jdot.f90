@@ -277,7 +277,6 @@
             b% jdot_mb = -3.8d-30*b% m(b% d_i)*rsun4* &
                            pow(min(b% r(b% d_i),b% rl(b% d_i))/rsun,b% magnetic_braking_gamma)* &
                            two_pi_div_p3*jdot_scale
-            write(*,*) "check jdot_scale", 1, jdot_scale, b% jdot_mb
             b% using_jdot_mb(b% d_i) = .true.
             if ((apply_jdot_mb .or. b% keep_mb_on) .and. .not. b% using_jdot_mb_old(b% d_i)) then
                write(*,*) 'turn on magnetic braking for star ', b% d_i
