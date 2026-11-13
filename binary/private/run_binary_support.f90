@@ -670,7 +670,7 @@ contains
             else
                write_history = .false.
             end if
-            if (s% terminal_interval > 0) then
+            if (b% terminal_interval > 0) then
                write_terminal = (mod(model, b% terminal_interval) == 0)
             else
                write_terminal = .false.
