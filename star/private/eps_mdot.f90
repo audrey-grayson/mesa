@@ -504,13 +504,18 @@
             return
          end if
 
-         ! NOTE: this routine does not change xh, xa, q or dq, and does not write any
+         ! This routine does not change xh, xa, q or dq, and does not write any
          ! field that set_vars/set_hydro_vars reads (it writes only eps_mdot,
          ! mdot_adiabatic_surface, mdot_acoustic_surface, surface_cell_specific_total_energy_old,
          ! total_energy_profile_after_adjust_mass and the total_*_after_adjust_mass scalars).
-         ! So s% need_to_setvars is deliberately not set here: set_vars was already run
-         ! after do_adjust_mass (which sets the flag), and re-running it would reproduce
-         ! identical eos/kap/net/mlt results at the cost of a full pass.
+         ! set_vars was already run after do_adjust_mass (which sets the flag), so without
+         ! rotation a second pass would reproduce identical eos/kap/net/mlt results and is skipped.
+         !
+         ! With rotation, set_vars is not idempotent: set_rotation_info updates i_rot and omega
+         ! from w_div_w_crit_roche left by the previous call, and blends in the binary tidal
+         ! fp/ft, so each extra pass advances that fixed-point iteration and changes results.
+         ! Keep the extra pass in that case to preserve bit-for-bit behavior.
+         if (s% rotation_flag) s% need_to_setvars = .true.
 
          ! Stellar properties
          nz = s%nz
