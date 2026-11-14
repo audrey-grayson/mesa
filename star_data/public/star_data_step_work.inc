@@ -989,6 +989,14 @@
 
          real(dp), pointer, dimension(:) :: AF1=>null() ! for factored jacobian
 
+         ! block matrix work arrays for star_solver, kept between calls
+         ! so they are not reallocated every solve; each is (nvar*nvar*nz) or larger.
+         ! the solver_save_* arrays are only allocated when use_DGESVX_in_bcyclic is true.
+         real(dp), pointer, dimension(:) :: &
+            solver_lblk1=>null(), solver_dblk1=>null(), solver_ublk1=>null(), &
+            solver_lblkF1=>null(), solver_dblkF1=>null(), solver_ublkF1=>null(), &
+            solver_save_lblk1=>null(), solver_save_dblk1=>null(), solver_save_ublk1=>null()
+
          real(dp), pointer :: solver_dx(:,:)=>null(), solver_dx1(:)=>null()
          integer :: solver_iter, solver_adjust_iter
          real(dp), pointer :: x_scale(:,:)=>null(), x_scale1(:)=>null()
