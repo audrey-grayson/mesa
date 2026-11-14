@@ -1,0 +1,36 @@
+
+&binary_job
+
+   inlist_names(1) = 'inlist1'
+   inlist_names(2) = 'inlist2'
+
+   evolve_both_stars = .true.
+
+/ ! end of binary_job namelist
+
+&binary_controls
+
+   m1 = 1.0d0  ! donor mass in Msun
+   m2 = 0.8d0  ! companion mass in Msun
+   initial_period_in_days = 1.5d0
+   initial_eccentricity = 0.2d0
+
+   ! Tidal circularisation from both stars (Hut 1981, convective envelopes).
+   ! Ftid_1 = 0 switches off star 1's term, so the only eccentricity change
+   ! comes from star 2, which must be scaled by Ftid_2.
+   do_tidal_circ = .true.
+   circ_type_1 = 'Hut_conv'
+   circ_type_2 = 'Hut_conv'
+   Ftid_1 = 0d0
+   Ftid_2 = 1d0
+
+   ! keep spins out of the problem: non-rotating stars, no synchronisation
+   do_tidal_sync = .false.
+
+   fr = 0.01d0
+   fr_limit = 1d-3
+   limit_retention_by_mdot_edd = .false.
+
+   photo_interval = 20
+
+/ ! end of binary_controls namelist

@@ -693,6 +693,19 @@ star_plus_point_mass_explicit_mdot
 Same as above, but run using an explicit calculation for the mass
 transfer rate.
 
+:ref:`restart_tout_wind`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``star_plus_point_mass`` with a tidally enhanced wind. Verifies that a
+restart from a photo rebuilds the orbit-phase arrays used to integrate
+the wind over the orbit.
+
+:ref:`tidal_circ_ftid`
+^^^^^^^^^^^^^^^^^^^^^^
+
+Two stars in an eccentric orbit with tidal circularisation from
+star 2 only. Verifies that star 2's term is scaled by ``Ftid_2``.
+
 :ref:`wind_fed_bhhmxb`
 ^^^^^^^^^^^^^^^^^^^^^^
 
