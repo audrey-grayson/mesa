@@ -1,0 +1,29 @@
+&binary_job
+
+   inlist_names(1) = 'inlist1' 
+   inlist_names(2) = 'inlist2'
+
+   evolve_both_stars = .false.
+
+   pgbinary_flag = .true.
+
+/ ! end of binary_job namelist
+
+&binary_controls
+         
+   m1 = 5d0  ! donor mass in Msun
+   m2 = 10d0 ! companion mass in Msun
+   initial_period_in_days = 1d0
+
+   fr = 0.05
+   fr_limit = 1d-2
+
+   limit_retention_by_mdot_edd = .true.
+
+   ! Tidally enhanced wind (Tout & Eggleton 1988). The enhancement is
+   ! integrated over the orbit with theta_co/time_co, which are not stored
+   ! in photos, so a restart must rebuild them.
+   do_enhance_wind_1 = .true.
+   tout_B_wind_1 = 1d4
+         
+/ ! end of binary_controls namelist
