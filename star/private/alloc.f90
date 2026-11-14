@@ -333,6 +333,16 @@
 
          if (ASSOCIATED(s% AF1)) deallocate(s% AF1)
 
+         if (ASSOCIATED(s% solver_lblk1)) deallocate(s% solver_lblk1)
+         if (ASSOCIATED(s% solver_dblk1)) deallocate(s% solver_dblk1)
+         if (ASSOCIATED(s% solver_ublk1)) deallocate(s% solver_ublk1)
+         if (ASSOCIATED(s% solver_lblkF1)) deallocate(s% solver_lblkF1)
+         if (ASSOCIATED(s% solver_dblkF1)) deallocate(s% solver_dblkF1)
+         if (ASSOCIATED(s% solver_ublkF1)) deallocate(s% solver_ublkF1)
+         if (ASSOCIATED(s% solver_save_lblk1)) deallocate(s% solver_save_lblk1)
+         if (ASSOCIATED(s% solver_save_dblk1)) deallocate(s% solver_save_dblk1)
+         if (ASSOCIATED(s% solver_save_ublk1)) deallocate(s% solver_save_ublk1)
+
       end subroutine free_other
 
 

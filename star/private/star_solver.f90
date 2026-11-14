@@ -1914,9 +1914,14 @@
             allocate(ddx(1:nvar,1:nz))
             allocate(row_scale_factors1(1:neq))
             allocate(col_scale_factors1(1:neq))
-            allocate(save_ublk1(1:nvar*neq))
-            allocate(save_dblk1(1:nvar*neq))
-            allocate(save_lblk1(1:nvar*neq))
+            if (s% use_DGESVX_in_bcyclic) then
+               call get_block_work(s% solver_save_ublk1, save_ublk1, ierr)
+               if (ierr /= 0) return
+               call get_block_work(s% solver_save_dblk1, save_dblk1, ierr)
+               if (ierr /= 0) return
+               call get_block_work(s% solver_save_lblk1, save_lblk1, ierr)
+               if (ierr /= 0) return
+            end if
 
             band_kl = 2*nvar
             band_ku = 2*nvar
@@ -1937,9 +1942,9 @@
                call fill_with_NaNs_2D(ddx)
                call fill_with_NaNs(row_scale_factors1)
                call fill_with_NaNs(col_scale_factors1)
-               call fill_with_NaNs(save_ublk1)
-               call fill_with_NaNs(save_dblk1)
-               call fill_with_NaNs(save_lblk1)
+               if (associated(save_ublk1)) call fill_with_NaNs(save_ublk1)
+               if (associated(save_dblk1)) call fill_with_NaNs(save_dblk1)
+               if (associated(save_lblk1)) call fill_with_NaNs(save_lblk1)
                if (associated(band1)) call fill_with_NaNs(band1)
             end if
 
@@ -1953,13 +1958,23 @@
 
             ipiv_blk1(1:neq) => ipiv1(1:neq)
 
-            allocate(ublk1(1:nvar*neq),dblk1(1:nvar*neq),lblk1(1:nvar*neq))
+            call get_block_work(s% solver_ublk1, ublk1, ierr)
+            if (ierr /= 0) return
+            call get_block_work(s% solver_dblk1, dblk1, ierr)
+            if (ierr /= 0) return
+            call get_block_work(s% solver_lblk1, lblk1, ierr)
+            if (ierr /= 0) return
 
             lblk(1:nvar,1:nvar,1:nz) => lblk1(1:nvar*neq)
             dblk(1:nvar,1:nvar,1:nz) => dblk1(1:nvar*neq)
             ublk(1:nvar,1:nvar,1:nz) => ublk1(1:nvar*neq)
 
-            allocate(ublkF1(1:nvar*neq),dblkF1(1:nvar*neq),lblkF1(1:nvar*neq))
+            call get_block_work(s% solver_ublkF1, ublkF1, ierr)
+            if (ierr /= 0) return
+            call get_block_work(s% solver_dblkF1, dblkF1, ierr)
+            if (ierr /= 0) return
+            call get_block_work(s% solver_lblkF1, lblkF1, ierr)
+            if (ierr /= 0) return
 
             lblkF(1:nvar,1:nvar,1:nz) => lblkF1(1:nvar*neq)
             dblkF(1:nvar,1:nvar,1:nz) => dblkF1(1:nvar*neq)
@@ -1976,6 +1991,20 @@
 
          end subroutine pointers
 
+         ! point work(1:nvar*neq) at the persistent array store, growing store if needed.
+         ! the arrays are reused between calls; the extra 10% avoids reallocating
+         ! every time nz grows a little.
+         subroutine get_block_work(store, work, ierr)
+            use utils_lib, only: realloc_if_needed_1
+            real(dp), pointer :: store(:), work(:)
+            integer, intent(out) :: ierr
+            integer :: sz
+            sz = nvar*neq
+            call realloc_if_needed_1(store, sz, sz/10, ierr)
+            if (ierr /= 0) return
+            work => store(1:sz)
+         end subroutine get_block_work
+
          subroutine cleanup()
 
             if(associated(dxsave1)) deallocate(dxsave1)
@@ -1989,18 +2018,12 @@
             if(associated(ddx)) deallocate(ddx)
             if(associated(row_scale_factors1)) deallocate(row_scale_factors1)
             if(associated(col_scale_factors1)) deallocate(col_scale_factors1)
-            if(associated(save_ublk1)) deallocate(save_ublk1)
-            if(associated(save_dblk1)) deallocate(save_dblk1)
-            if(associated(save_lblk1)) deallocate(save_lblk1)
+            ! save_*blk1 point into persistent arrays in s; not deallocated here
             if(associated(band1)) deallocate(band1)
             if(associated(ipiv1)) deallocate(ipiv1)
 
-            if(associated(ublk1)) deallocate(ublk1)
-            if(associated(dblk1)) deallocate(dblk1)
-            if(associated(lblk1)) deallocate(lblk1)
-            if(associated(ublkF1)) deallocate(ublkF1)
-            if(associated(dblkF1)) deallocate(dblkF1)
-            if(associated(lblkF1)) deallocate(lblkF1)
+            ! ublk1, dblk1, lblk1, ublkF1, dblkF1, lblkF1 point into
+            ! persistent arrays in s; not deallocated here
 
 
             nullify(equ, equ1, dxsave1,dxsave, ddxsave, B1, &

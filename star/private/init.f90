@@ -270,6 +270,9 @@
          nullify(s% solver_iwork)
          nullify(s% solver_work)
          nullify(s% AF1)
+         nullify(s% solver_lblk1, s% solver_dblk1, s% solver_ublk1)
+         nullify(s% solver_lblkF1, s% solver_dblkF1, s% solver_ublkF1)
+         nullify(s% solver_save_lblk1, s% solver_save_dblk1, s% solver_save_ublk1)
 
          s% net_name = ''
          s% species = 0
