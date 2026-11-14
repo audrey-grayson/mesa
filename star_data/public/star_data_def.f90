@@ -27,7 +27,7 @@ module star_data_def
    use rates_def, only: maxlen_reaction_Name
    use eos_def, only: EoS_General_Info
    use kap_def, only: Kap_General_Info
-   use net_def, only: Net_General_Info, other_net_derivs_interface
+   use net_def, only: Net_General_Info, Net_Info, other_net_derivs_interface
    use colors_def, only: Colors_General_Info
    use auto_diff, only: auto_diff_real_star_order1
    use star_pgstar, only: pgstar_controls
@@ -70,6 +70,9 @@ module star_data_def
       type(EoS_General_Info), pointer :: eos_rq  ! from call eos_ptr(s% eos_handle,s% eos_rq,ierr)
       type(Kap_General_Info), pointer :: kap_rq  ! from call kap_ptr(s% kap_handle,s% kap_rq,ierr)
       type(Net_General_Info), pointer :: net_rq  ! from call net_ptr(s% net_handle,s% net_rq, ierr)
+      ! per-OpenMP-thread work space for net evaluations in do1_net, reused between zones.
+      ! (re)created by set_net, so the buffers always match the current net.
+      type(Net_Info), allocatable :: net_info_per_thread(:)
 
       ! parameters for create pre ms -- set in run_star before calling star_create_pre_ms_model
       real(dp) :: pre_ms_T_c, pre_ms_guess_rho_c, &

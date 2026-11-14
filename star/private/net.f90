@@ -147,7 +147,8 @@
          integer :: i, j, kk, screening_mode, sz, i_var, i_var_sink
          real(dp) :: log10_rho, log10_T, T, alfa, eps_nuc_factor, &
             d_eps_nuc_dRho, d_eps_nuc_dT, tau_gamma, eps_cat_sum
-         type (Net_Info) :: n
+         type (Net_Info), target :: n_local
+         type (Net_Info), pointer :: n
          real(dp), pointer :: reaction_neuQs(:)
          logical :: clipped_T
 
@@ -162,6 +163,9 @@
              s% T_start(k) >= s% op_split_burn_min_T) then  ! leave this to do_burn
             return
          end if
+
+         n => thread_net_info(s, species)
+         if (.not. associated(n)) n => n_local
 
          n% star_id = s% id
          n% zone = k
@@ -418,6 +422,36 @@
       end subroutine do1_net
 
 
+      ! Returns the net work space owned by the calling OpenMP thread, so the
+      ! arrays inside it are allocated once instead of on every zone call.
+      ! Returns null (caller then uses a fresh local Net_Info, as before) when
+      ! no per-thread storage exists, when called from a nested parallel region
+      ! (thread numbers are not unique there), or if the stored work space
+      ! does not match the current net.
+      function thread_net_info(s, species) result(n)
+         use net_def, only: Net_Info
+         use utils_lib, only: utils_OMP_GET_THREAD_NUM
+!$       use omp_lib, only: omp_get_level
+         type (star_info), pointer :: s
+         integer, intent(in) :: species
+         type (Net_Info), pointer :: n
+         integer :: level, i_thread
+
+         n => null()
+         if (.not. allocated(s% net_info_per_thread)) return
+         level = 0
+!$       level = omp_get_level()
+         if (level > 1) return
+         i_thread = utils_OMP_GET_THREAD_NUM() + 1
+         if (i_thread < 1 .or. i_thread > size(s% net_info_per_thread)) return
+         n => s% net_info_per_thread(i_thread)
+         if (allocated(n% y)) then
+            ! n% g is set whenever n% y has been allocated by the net module
+            if (size(n% y) /= species .or. .not. associated(n% g, s% net_rq)) n => null()
+         end if
+      end function thread_net_info
+
+
 
       subroutine show_stuff(s,k)
          use chem_def
@@ -588,7 +622,7 @@
 
       subroutine set_net(s, new_net_name, ierr)
          use net_lib
-         use utils_lib, only: realloc_double
+         use utils_lib, only: realloc_double, utils_OMP_GET_MAX_THREADS
          use alloc, only: update_nvar_allocs, set_chem_names
          use chem_def, only: ih1, ihe4
          use rates_def
@@ -687,6 +721,12 @@
          s% need_to_setvars = .true.
 
          s% net_rq% fill_arrays_with_nans = s% fill_arrays_with_NaNs
+
+         ! one reusable Net_Info per OpenMP thread for do1_net.
+         ! recreated here so that buffers sized for a previous net are dropped;
+         ! the arrays inside are allocated on first use by the net module.
+         if (allocated(s% net_info_per_thread)) deallocate(s% net_info_per_thread)
+         allocate(s% net_info_per_thread(utils_OMP_GET_MAX_THREADS()))
 
       end subroutine set_net
 

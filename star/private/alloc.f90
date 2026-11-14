@@ -240,6 +240,7 @@
 
          call free_net_handle(s% net_handle)
          s%net_handle = 0
+         if (allocated(s% net_info_per_thread)) deallocate(s% net_info_per_thread)
 
          call free_eos_handle(s% eos_handle)
          s%eos_handle = 0
