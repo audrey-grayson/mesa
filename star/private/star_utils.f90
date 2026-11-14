@@ -194,7 +194,7 @@
 
          if (use_omp) then
             okay = .true.
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
             do k = nzlo, nzhi
                if (.not. okay) cycle
                op_err = 0

@@ -58,7 +58,8 @@
          include 'formats'
          ierr = 0
          op_err = 0
-         !$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+         !$OMP PARALLEL DO PRIVATE(k,op_err) &
+         !$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s%nz
             ! Hp_face(k) <= 0 means it needs to be set.  e.g., after read file
             if (s% Hp_face(k) <= 0) then
@@ -76,7 +77,8 @@
             if (s% report_ierr) write(*,2) 'failed in set_RSP2_vars loop 1', s% model_number
             return
          end if
-         !$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+         !$OMP PARALLEL DO PRIVATE(k,op_err) &
+         !$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             x = compute_Chi_cell(s, k, op_err)
             if (op_err /= 0) ierr = op_err
@@ -1204,7 +1206,8 @@
          ierr = 0
          if (s% mixing_length_alpha == 0d0) return
 
-         !$OMP PARALLEL DO PRIVATE(k,PII_div_Hp,QQ,SOURCE,Hp_cell,DAMP,POM,POM2,DAMPR,del,soln) SCHEDULE(dynamic,2)
+         !$OMP PARALLEL DO PRIVATE(k,PII_div_Hp,QQ,SOURCE,Hp_cell,DAMP,POM,POM2,DAMPR,del,soln) &
+         !$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=s% RSP2_num_outermost_cells_forced_nonturbulent+1, &
                s% nz - max(1,int(s% nz/s% RSP_nz_div_IBOTOM))
 

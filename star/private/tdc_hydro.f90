@@ -55,7 +55,7 @@ contains
          return
       end if
 
-      !$OMP PARALLEL DO PRIVATE(k,op_err,x) SCHEDULE(dynamic,2)
+      !$OMP PARALLEL DO PRIVATE(k,op_err,x) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
       do k = 1, s%nz
          if (s%use_face_reconstruction) then
             x = get_TDC_Hp_face(s, k, op_err)
@@ -75,7 +75,7 @@ contains
          if (s%report_ierr) write (*, 2) 'failed in set_viscosity_vars_TDC loop 1', s%model_number
          return
       end if
-      !$OMP PARALLEL DO PRIVATE(k,op_err,x) SCHEDULE(dynamic,2)
+      !$OMP PARALLEL DO PRIVATE(k,op_err,x) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
       do k = 1, s%nz
          x = compute_Chi_div_w_face(s, k, op_err) ! Sets Chi_face
          if (op_err /= 0) then

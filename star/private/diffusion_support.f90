@@ -108,7 +108,8 @@
          Vlimit = s% diffusion_Vlimit
 
 
-!$OMP PARALLEL DO PRIVATE(k, j, i, total_diffusion_factor, op_err, C_face, Z_face, dC_dr_face, dlnne_dr_face, tmp) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, j, i, total_diffusion_factor, op_err, C_face, Z_face, dC_dr_face, dlnne_dr_face, tmp) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo+1, nzhi
 
             ! Total diffusion scaling factor is product of

@@ -50,7 +50,7 @@
          include 'formats'
          ierr = 0
          if (s% doing_timing) call start_time(s, time0, total)
-!$OMP PARALLEL DO PRIVATE(k,op_err,make_gradr_sticky_in_solver_iters) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err,make_gradr_sticky_in_solver_iters) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo, nzhi
             op_err = 0
             call do1_mlt_2(s, k, make_gradr_sticky_in_solver_iters, op_err)
@@ -584,7 +584,7 @@
             Hp = (bot_Hp + top_Hp)/2
             if (dr < s% alpha_mlt(k)*min(top_Hp, bot_Hp) .and. &
                   s% redo_conv_for_dr_lt_mixing_length) then
-!$OMP PARALLEL DO PRIVATE(kk,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(kk,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
                do kk = k, k_bot
                   op_err = 0
                   call redo1_mlt(s,kk,dr,op_err)

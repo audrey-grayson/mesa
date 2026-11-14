@@ -1951,7 +1951,7 @@
 
          ierr = 0
 
-!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, nz
             r00 = get_r_from_xh(s,k)
             s% w_div_w_crit_roche(k) = &
@@ -1997,7 +1997,7 @@
          end if
 
          ! A constant omega correction restores the discrete total angular momentum.
-!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo, nzhi
             s% j_rot(k) = s% j_rot(k) + domega*s% i_rot(k)% val
             r00 = get_r_from_xh(s,k)
@@ -2041,7 +2041,7 @@
             old_ke_tot = old_ke_tot + old_ke(k)
          end do
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, nz
             op_err = 0
             call adjust1_v( &
@@ -2298,7 +2298,7 @@
             old_ke_tot = old_ke_tot + old_ke(k)
          end do
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, nz
             op_err = 0
             call adjust1_u( &
@@ -2590,7 +2590,7 @@
             old_eturb_tot = old_eturb_tot + old_eturb(k)
          end do
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, nz
             op_err = 0
             call adjust1_etrb( &

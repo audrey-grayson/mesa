@@ -37,7 +37,7 @@
          integer :: k, op_err
          include 'formats'
          ierr = 0
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, s% nz
             if (ierr /= 0) cycle
             call do1_chem_eqns(s, k, nvar, op_err)

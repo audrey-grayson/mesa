@@ -160,7 +160,7 @@ contains
 
 
 
-       !$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+       !$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
        do k = nzlo, nzhi
           op_err = 0
           call do1_neu_kap(s,k,op_err)
@@ -269,7 +269,7 @@ contains
 
     if (dbg) write(*,*) 'set_eos_with_mask'
 
-    !$OMP PARALLEL DO PRIVATE(ierr) SCHEDULE(dynamic,2)
+    !$OMP PARALLEL DO PRIVATE(ierr) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
     do k = nzlo, nzhi
        if (mask(k)) then
           call do_eos_for_cell(s, k, ierr)

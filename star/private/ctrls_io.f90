@@ -41,6 +41,9 @@
     he_core_boundary_h1_fraction, co_core_boundary_he4_fraction, one_core_boundary_he4_c12_fraction, &
     fe_core_boundary_si28_fraction, neutron_rich_core_boundary_Ye_max, min_boundary_fraction, &
 
+    ! OpenMP scheduling
+    omp_chunk_size_for_zone_loops, &
+
     ! when to stop
     max_model_number, relax_max_number_retries, max_number_retries, max_age, max_age_in_seconds, max_age_in_days, &
     num_adjusted_dt_steps_before_max_age, dt_years_for_steps_before_max_age, max_abs_rel_run_E_err, &
@@ -757,6 +760,7 @@
  ! when to stop
  s% max_model_number = max_model_number
  s% max_number_retries = max_number_retries
+ s% omp_chunk_size_for_zone_loops = max(1, omp_chunk_size_for_zone_loops)
  s% max_abs_rel_run_E_err = max_abs_rel_run_E_err
  s% relax_max_number_retries = relax_max_number_retries
  s% max_age = max_age
@@ -2457,6 +2461,7 @@ s% gradT_excess_max_log_tau_full_off = gradT_excess_max_log_tau_full_off
  max_model_number = s% max_model_number
  max_abs_rel_run_E_err = s% max_abs_rel_run_E_err
  max_number_retries = s% max_number_retries
+ omp_chunk_size_for_zone_loops = s% omp_chunk_size_for_zone_loops
  relax_max_number_retries = s% relax_max_number_retries
  max_age = s% max_age
  max_age_in_days = s% max_age_in_days

@@ -112,7 +112,8 @@
             if (ierr /= 0) return
          end if
 
-!$OMP PARALLEL DO PRIVATE(k, op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, op_err) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo, nzhi
             call get1_dX_dm( &
                k, nz, nc, nzlo, nzhi, &
@@ -1084,7 +1085,8 @@
          if (dbg) write(*,*) 'call do1 for each zone'
 
          if (calculate_ionization) then
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
             do k=nzlo,nzhi
                call do1(k)
             end do
@@ -1535,7 +1537,8 @@
             stat=ierr)
          if (ierr /= 0) return
 
-!$OMP PARALLEL DO PRIVATE(i,k,thread_num,op_err,j,alfa,beta,X_face,umesh,ff,ta,rs,sz,offset) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(i,k,thread_num,op_err,j,alfa,beta,X_face,umesh,ff,ta,rs,sz,offset) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=nzlo+1, kmax
             if (T_face(k) < min_T_for_radaccel) then
                do j = 1, nc

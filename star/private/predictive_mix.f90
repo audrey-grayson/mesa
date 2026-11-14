@@ -724,7 +724,7 @@ contains
 
     ! Update EOS data for cells spanning the mixed region
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
     update_cell_loop_eos : do k = k_top_mz, k_bot_mz
 
        op_err = 0
@@ -765,7 +765,7 @@ contains
     end if
 
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
     update_cell_loop_kap : do k = k_top_mz, k_bot_mz
        op_err = 0
        call do_kap_for_cell(s, k, op_err)
@@ -821,7 +821,7 @@ contains
     if (s% use_face_reconstruction) &
        s% reconstructed_face_state_valid(k_a:k_b) = .false.
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
     restore_cell_loop : do k = k_top_mz, k_bot_mz
 
        op_err = 0

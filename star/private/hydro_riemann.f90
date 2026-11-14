@@ -296,7 +296,7 @@
          integer :: k, op_err
          include 'formats'
          ierr = 0
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, s% nz
             op_err = 0
             call do1_uface_and_Pface(s, k, op_err)

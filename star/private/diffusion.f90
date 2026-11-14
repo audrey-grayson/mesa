@@ -1435,7 +1435,7 @@
          real(dp), intent(in), dimension(:,:,:) :: SIG_face
          real(dp), intent(inout), dimension(:,:) :: dX_dt  ! (nc,nz)
          integer :: k
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=nzlo,nzhi
             call get1_dX_dt( &
                k, nz, nzlo, nzhi, m, nc, X, X_face, C_div_X, &
@@ -1556,7 +1556,7 @@
          ! e00(i,j,k) = d(lhs(i,k))/d(X(j,k))
          ! ep1(i,j,k) = d(lhs(i,k))/d(X(j,k+1))
          include 'formats'
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=nzlo,nzhi
             call get1_eqn_matrix_entries( &
                k, nz, nzlo, nzhi, m, nc, jac_only, X, X_face, C_div_X, &

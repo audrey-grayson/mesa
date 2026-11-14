@@ -1639,6 +1639,20 @@
     relax_max_number_retries = 300
 
 
+      ! omp_chunk_size_for_zone_loops
+      ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      ! Chunk size used in the ``SCHEDULE(dynamic,chunk)`` clause of the per-zone
+      ! OpenMP parallel loops (micro, net, turb_info, hydro_eqns, etc.).
+      ! Larger values can reduce scheduling overhead and false sharing between
+      ! threads writing adjacent zones. Results do not depend on this value.
+      ! Must be >= 1.
+
+      ! ::
+
+    omp_chunk_size_for_zone_loops = 2
+
+
       ! min_timestep_limit
       ! ~~~~~~~~~~~~~~~~~~
 

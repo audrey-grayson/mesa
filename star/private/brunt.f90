@@ -216,7 +216,7 @@
          call get_face_values(s, s% rho, rho_face, ierr)
          if (ierr /= 0) return
 
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=nzlo,nzhi
             op_err = 0
             call get_brunt_B(&

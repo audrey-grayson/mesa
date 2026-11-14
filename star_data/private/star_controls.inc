@@ -125,6 +125,7 @@
          real(dp) :: power_z_burn_lower_limit
 
          integer :: max_number_retries, relax_max_number_retries
+         integer :: omp_chunk_size_for_zone_loops
          real(dp) :: max_abs_rel_run_E_err
 
          real(dp) :: min_timestep_limit

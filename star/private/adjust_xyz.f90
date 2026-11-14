@@ -221,7 +221,7 @@
          include 'formats'
 
          ierr = 0
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1, nz
             call set_new_abundances( &
                s, adjust_abundances_for_new_isos, &

@@ -859,7 +859,7 @@
                end do
             end do
          end if
-!$OMP PARALLEL DO PRIVATE(k, op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, k_const_mass
             op_err = 0
             call set1_xa(s, k, nz, species, xa_old, xaccrete, &
@@ -1158,7 +1158,7 @@
          else
             k0 = k_below_just_added + 1
          end if
-!$OMP PARALLEL DO PRIVATE(k, op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = 1, k_const_mass
             if (k < k0) then
                cycle

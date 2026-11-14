@@ -1004,7 +1004,7 @@
          end if
 
          kbad = 0
-!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,nz
             op_err = 0
             call set1(k,.false.,op_err)

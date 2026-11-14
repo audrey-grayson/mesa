@@ -232,7 +232,8 @@
          integer :: k
          include 'formats'
 
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             if (.not. skip_w_div_w_crit_roche) then
                s% w_div_w_crit_roche(k) = &
@@ -250,7 +251,8 @@
          integer :: k
          include 'formats'
 
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic, 2)
+!$OMP PARALLEL DO PRIVATE(k) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             if (s% omega(k) /= 0d0) then
                ! we can directly compute i_rot using j_rot and omega
@@ -267,7 +269,8 @@
          type (star_info), pointer :: s
          integer :: k
          include 'formats'
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic, 2)
+!$OMP PARALLEL DO PRIVATE(k) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             s% j_rot(k) = s% i_rot(k)% val*s% omega(k)
          end do
@@ -279,7 +282,8 @@
          character (len=*) :: str
          integer :: k
          include 'formats'
-!$OMP PARALLEL DO PRIVATE(k) SCHEDULE(dynamic, 2)
+!$OMP PARALLEL DO PRIVATE(k) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             s% omega(k) = s% j_rot(k)/s% i_rot(k)% val
          end do
@@ -364,7 +368,8 @@
          integer :: k
          real(dp) :: r00
 
-!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, r00) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             if (s% j_rot(k) /= 0d0) then
                r00 = get_r_from_xh(s,k)
@@ -384,7 +389,8 @@
          integer :: k
          real(dp) :: r00
 
-!$OMP PARALLEL DO PRIVATE(k, r00) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, r00) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1,s% nz
             r00 = get_r_from_xh(s,k)
             s% w_div_w_crit_roche(k) = &
@@ -555,7 +561,8 @@
             call set_omega(s, 'set_rotation_info')
          end if
 
-!$OMP PARALLEL DO PRIVATE(k, fp_single, ft_single, fp_tidal, ft_tidal, ierr) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, fp_single, ft_single, fp_tidal, ft_tidal, ierr) &
+!$OMP& SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=1, s% nz
             if (s% use_other_eval_fp_ft) then
                call s% other_eval_fp_ft( &

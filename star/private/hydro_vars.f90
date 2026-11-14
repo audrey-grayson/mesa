@@ -717,7 +717,7 @@
             s% d_vc_dv = 0.5d0
          end if
 
-!$OMP PARALLEL DO PRIVATE(j,k,twoGmrc2,sum_xa) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(j,k,twoGmrc2,sum_xa) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k=nzlo, nzhi
             if (s% lnd_start(k) < -1d90) then
                s% lnd_start(k) = s% lnd(k)

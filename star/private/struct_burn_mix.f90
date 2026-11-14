@@ -887,7 +887,7 @@
 
          if (s% doing_timing) call start_time(s, time0, total)
 
-!$OMP PARALLEL DO PRIVATE(k,op_err,num_iters,avg_epsnuc) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k,op_err,num_iters,avg_epsnuc) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = kmin, nz
 !$OMP ATOMIC READ
             op_err = k_bad

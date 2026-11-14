@@ -101,7 +101,7 @@
          unstable(:,1:nz) = .false.
          growth_limit = 1d-10
 
-!$OMP PARALLEL DO PRIVATE(which, k, q, age_fraction, op_err) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(which, k, q, age_fraction, op_err) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do which = 1, num_instabilities
 
             if (ierr /= 0) cycle

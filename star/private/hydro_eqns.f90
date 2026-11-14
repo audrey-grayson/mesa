@@ -124,7 +124,7 @@
 
       ! solving structure equations
 
-!$OMP PARALLEL DO PRIVATE(op_err,k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(op_err,k) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo, nzhi
             op_err = 0
             ! hack for composition partials
@@ -158,7 +158,7 @@
             end if
          end if
 
-!$OMP PARALLEL DO PRIVATE(op_err,k) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(op_err,k) SCHEDULE(dynamic,s% omp_chunk_size_for_zone_loops)
          do k = nzlo, nzhi
             s% dblk(:,:,k) = 0
             s% ublk(:,:,k) = 0
