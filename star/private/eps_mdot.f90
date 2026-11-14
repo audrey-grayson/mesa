@@ -504,7 +504,13 @@
             return
          end if
 
-         s% need_to_setvars = .true.
+         ! NOTE: this routine does not change xh, xa, q or dq, and does not write any
+         ! field that set_vars/set_hydro_vars reads (it writes only eps_mdot,
+         ! mdot_adiabatic_surface, mdot_acoustic_surface, surface_cell_specific_total_energy_old,
+         ! total_energy_profile_after_adjust_mass and the total_*_after_adjust_mass scalars).
+         ! So s% need_to_setvars is deliberately not set here: set_vars was already run
+         ! after do_adjust_mass (which sets the flag), and re-running it would reproduce
+         ! identical eos/kap/net/mlt results at the cost of a full pass.
 
          ! Stellar properties
          nz = s%nz
