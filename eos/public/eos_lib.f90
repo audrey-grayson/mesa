@@ -24,6 +24,13 @@
 
       implicit none
 
+      ! per-thread work space for d_dxa in eosDT_get, reused between calls.
+      ! grown as needed; d_dxa_work_in_use guards against re-entrant calls
+      ! (e.g. from an other_eos hook), which fall back to a local array.
+      real(dp), allocatable, save, private :: d_dxa_work(:,:)
+      logical, save, private :: d_dxa_work_in_use = .false.
+!$omp threadprivate(d_dxa_work, d_dxa_work_in_use)
+
       contains
 
       subroutine eos_init( &
@@ -135,14 +142,30 @@
          call basic_composition_info( &
             species, chem_id, xa, X, Y, Z, &
             abar, zbar, z2bar, z53bar, ye, mass_correction, sumx)
-         allocate(d_dxa_eos(num_eos_basic_results, species))
+         if (d_dxa_work_in_use) then  ! re-entrant call: use a local array
+            allocate(d_dxa_eos(num_eos_basic_results, species))
+            call Get_eosDT_Results( &
+               rq, Z, X, abar, zbar, &
+               species, chem_id, net_iso, xa, &
+               Rho, logRho, T, logT, &
+               res, d_dlnd, d_dlnT, d_dxa_eos, ierr)
+            ! only return 1st two d_dxa results (lnE and lnPgas) to star
+            d_dxa(1:num_eos_d_dxa_results,1:species) = d_dxa_eos(1:num_eos_d_dxa_results, 1:species)
+            return
+         end if
+         if (allocated(d_dxa_work)) then
+            if (size(d_dxa_work,dim=2) < species) deallocate(d_dxa_work)
+         end if
+         if (.not. allocated(d_dxa_work)) allocate(d_dxa_work(num_eos_basic_results, species))
+         d_dxa_work_in_use = .true.
          call Get_eosDT_Results( &
             rq, Z, X, abar, zbar, &
             species, chem_id, net_iso, xa, &
             Rho, logRho, T, logT, &
-            res, d_dlnd, d_dlnT, d_dxa_eos, ierr)
+            res, d_dlnd, d_dlnT, d_dxa_work(:,1:species), ierr)
+         d_dxa_work_in_use = .false.
          ! only return 1st two d_dxa results (lnE and lnPgas) to star
-         d_dxa(1:num_eos_d_dxa_results,1:species) = d_dxa_eos(1:num_eos_d_dxa_results, 1:species)
+         d_dxa(1:num_eos_d_dxa_results,1:species) = d_dxa_work(1:num_eos_d_dxa_results, 1:species)
       end subroutine eosDT_get
 
 

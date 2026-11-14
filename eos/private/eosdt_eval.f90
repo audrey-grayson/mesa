@@ -1496,7 +1496,8 @@
          ierr = 0
          skip = .false.
 
-         allocate(d_dxa_1(nv, species), d_dxa_2(nv, species))
+         ! d_dxa_1 and d_dxa_2 are only needed when blending,
+         ! so allocate them only on the paths that use them.
 
          alfa = alfa_in
          d_alfa_dlogT = d_alfa_dlogT_in
@@ -1522,6 +1523,7 @@
          end if
 
          if (alfa < 1d0) then  ! some of 1st
+            allocate(d_dxa_2(nv, species))
             call get_1st(rq% handle, dbg, &
                Z, X, abar, zbar, &
                species, chem_id, net_iso, xa, &
@@ -1556,6 +1558,8 @@
 
          ! blend 1st and 2nd
 
+         allocate(d_dxa_1(nv, species))
+         if (.not. allocated(d_dxa_2)) allocate(d_dxa_2(nv, species))
          call get_2nd( &
             rq% handle, dbg, Z, X, abar, zbar, &
             species, chem_id, net_iso, xa, &
