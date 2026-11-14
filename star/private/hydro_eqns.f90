@@ -394,6 +394,7 @@
             real(dp) :: xa_start_1(s% species)
             real(dp) :: frac_without_dxa
             real(dp) :: lnE_with_xa_start, lnPgas_with_xa_start
+            logical :: have_xa_start_eos
 
             integer :: i_var, i_var_sink
 
@@ -404,6 +405,7 @@
             include 'formats'
 
             ierr = 0
+            have_xa_start_eos = .false.
 
             ! some EOSes have composition partials and some do not
             ! those currently without dx partials are PC & Skye & ideal
@@ -437,18 +439,22 @@
                   if (abs(dxa) >= dxa_threshold) then
 
                      ! first, get eos with xa_start
+                     ! this does not depend on j, so evaluate it at most once per zone
 
-                     call get_eos( &
-                        s, k, s% xa_start(:,k), &
-                        s% rho(k), s% lnd(k)/ln10, s% T(k), s% lnT(k)/ln10, &
-                        res, dres_dlnd, dres_dlnT, dres_dxa, ierr)
-                     if (ierr /= 0) then
-                        if (s% report_ierr) write(*,2) 'failed in get_eos with xa_start', k
-                        return
+                     if (.not. have_xa_start_eos) then
+                        call get_eos( &
+                           s, k, s% xa_start(:,k), &
+                           s% rho(k), s% lnd(k)/ln10, s% T(k), s% lnT(k)/ln10, &
+                           res, dres_dlnd, dres_dlnT, dres_dxa, ierr)
+                        if (ierr /= 0) then
+                           if (s% report_ierr) write(*,2) 'failed in get_eos with xa_start', k
+                           return
+                        end if
+
+                        lnE_with_xa_start = res(i_lnE)
+                        lnPgas_with_xa_start = res(i_lnPgas)
+                        have_xa_start_eos = .true.
                      end if
-
-                     lnE_with_xa_start = res(i_lnE)
-                     lnPgas_with_xa_start = res(i_lnPgas)
 
                      ! now, get eos with 1 iso perturbed
 
