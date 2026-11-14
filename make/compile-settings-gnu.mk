@@ -4,7 +4,22 @@ FLAGS_CODE_SANITY := \
   -Wno-unused-label \
   -Wno-unused-parameter \
   -D_FORTIFY_SOURCE=2 \
-  -fPIC \
+
+# Position independent code. By default everything is built with -fPIC.
+# With PIC_ONLY_IF_DYNAMIC=yes, -fPIC is only used when DYNAMIC=yes; otherwise
+# -fPIE (cheaper, still linkable into PIE executables) is used instead.
+ifeq ($(PIC_ONLY_IF_DYNAMIC),yes)
+  ifeq ($(DYNAMIC),yes)
+    FLAGS_PIC := -fPIC
+  else
+    FLAGS_PIC := -fPIE
+  endif
+else
+  FLAGS_PIC := -fPIC
+endif
+ifeq ($(NO_SEMANTIC_INTERPOSITION),yes)
+  FLAGS_PIC += -fno-semantic-interposition
+endif
 
 FFLAGS_FP_SANITY :=
 ifeq ($(WITH_FPE_CHECKS),yes)
@@ -24,8 +39,27 @@ else ifeq ($(PROFILE),release-with-dbg-info)
 else ifeq ($(PROFILE),debug)
   FLAGS_OPT := -Og
   FLAGS_DEBUG := -ggdb
+else ifeq ($(PROFILE),release-native)
+  # Not portable: the binaries only run on CPUs similar to the build machine.
+  # -ffp-contract=off (FLAGS_REPRO) is kept, but -O3/-march=native can still
+  # change floating-point results through vectorization and libm selection.
+  FLAGS_OPT := -O3
+  FLAGS_DEBUG := -ggdb
+  FLAGS_ARCH := -march=native
 else
   $(error Unknown or unset PROFILE)
+endif
+
+# Link-time optimization (opt-in). Flags that influence code generation must be
+# repeated at link time, since that is when LTO generates the code.
+ifeq ($(WITH_LTO),yes)
+  FLAGS_LTO := -flto=auto
+  FLAGS_LTO_LINK := -flto=auto $(FLAGS_OPT) $(FLAGS_DEBUG) $(FLAGS_ARCH) $(FLAGS_REPRO)
+  AR_TOOL := gcc-ar
+else
+  FLAGS_LTO :=
+  FLAGS_LTO_LINK :=
+  AR_TOOL := ar
 endif
 
 ifeq ($(WITH_OPENMP),yes)
@@ -61,7 +95,7 @@ FFLAGS_SHARED  := \
   $(FLAGS_COVERAGE)
 FFLAGS_FIXED := $(FFLAGS_SHARED) $(FFLAGS_FIXED) $(FFLAGS)
 _FFLAGS := $(FFLAGS_SHARED) $(FFLAGS_FREE) $(FFLAGS)
-_CFLAGS := $(FLAGS_CODE_SANITY) $(FLAGS_REPRO) $(FLAGS_OPT) $(FLAGS_DEBUG) $(FLAGS_DEPS) $(FLAGS_OPENMP) $(FLAGS_COVERAGE) $(CFLAGS)
+_CFLAGS := $(FLAGS_CODE_SANITY) $(FLAGS_REPRO) $(FLAGS_OPT) $(FLAGS_ARCH) $(FLAGS_PIC) $(FLAGS_LTO) $(FLAGS_DEBUG) $(FLAGS_DEPS) $(FLAGS_OPENMP) $(FLAGS_COVERAGE) $(CFLAGS)
 
 PREPROCESS := gfortran -cpp -E
 FCOMPILE := gfortran $(_FFLAGS) -c
@@ -70,6 +104,6 @@ FCOMPILE_FIXED := gfortran $(FFLAGS_FIXED) -c
 FCOMPILE_MODULE_FIXED:= gfortran $(FFLAGS_FIXED) -w -c -fsyntax-only
 CCOMPILE := gcc $(_CFLAGS) -c
 LIB_DEP_ARGS := $(call pkg-config, --libs,$(EXTERNAL_DEPENDS_ON)) $(call pkg-config, --libs --static,$(INTERNAL_DEPENDS_ON))
-LIB_TOOL_STATIC := ar rcs
-LIB_TOOL_DYNAMIC := gfortran -shared $(FLAGS_OPENMP) $(FLAGS_COVERAGE) -o
-EXECUTABLE := gfortran $(FLAGS_OPENMP) $(FLAGS_COVERAGE)
+LIB_TOOL_STATIC := $(AR_TOOL) rcs
+LIB_TOOL_DYNAMIC := gfortran -shared $(FLAGS_LTO_LINK) $(FLAGS_OPENMP) $(FLAGS_COVERAGE) -o
+EXECUTABLE := gfortran $(FLAGS_LTO_LINK) $(FLAGS_OPENMP) $(FLAGS_COVERAGE)

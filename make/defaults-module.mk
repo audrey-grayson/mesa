@@ -10,6 +10,9 @@ COMPILER ?= gfortran
 VERSION ?= $(file <$(MAKE_DIR)../data/version_number)
 PROFILE ?= release-with-dbg-info
 DYNAMIC ?= no
+WITH_LTO ?= no
+PIC_ONLY_IF_DYNAMIC ?= no
+NO_SEMANTIC_INTERPOSITION ?= no
 WITH_OPENMP ?= yes
 WITH_CRLIBM ?= yes
 ifeq ($(MESA_FPE_CHECKS_ON),1)

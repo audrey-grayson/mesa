@@ -21,7 +21,10 @@ The build system exposes several options to control the build process. If you wa
 
 * **BUILD_DIR**: Where all compiled files will end up, default is ``build``. The output from each module's build will be in a subfolder with the module's name.
 * **COMPILER**: Which compiler to use. Supported options are ``gfortran`` (default).
-* **PROFILE**: Which set of compiler flags to use, mostly to control optimizations. Supported options are ``release`` (enable optimizations), ``release-with-dbg-info`` (enable optimizations, but keep debug info, default), and ``debug`` (disable most optimizations, keep debug info).
+* **PROFILE**: Which set of compiler flags to use, mostly to control optimizations. Supported options are ``release`` (enable optimizations), ``release-with-dbg-info`` (enable optimizations, but keep debug info, default), ``debug`` (disable most optimizations, keep debug info), and ``release-native`` (``-O3 -march=native`` with debug info; the resulting binaries are not portable to other CPU types, and results may differ from the other profiles at the level of floating-point round-off, although ``-ffp-contract=off`` is retained).
+* **WITH_LTO**: Whether to use link-time optimization (``-flto=auto``, with ``gcc-ar`` for static libraries and the optimization flags repeated at link time). Defaults to ``no`` (set to ``yes`` to enable). Increases build time and memory use.
+* **PIC_ONLY_IF_DYNAMIC**: By default all code is compiled with ``-fPIC``. Set to ``yes`` to use ``-fPIC`` only when ``DYNAMIC=yes`` and ``-fPIE`` otherwise. Defaults to ``no``.
+* **NO_SEMANTIC_INTERPOSITION**: Set to ``yes`` to add ``-fno-semantic-interposition`` to the compile flags, which allows more inlining of code compiled with ``-fPIC``. Defaults to ``no``.
 * **DYNAMIC**: Whether to generate dynamic or static libraries for each of the modules. Defaults to ``no`` (set to ``yes`` to enable).
 * **WITH_OPENMP**: Whether to use openmp. Defaults to ``yes`` (any other value will disable openmp).
 * **WITH_CRLIBM**: Whether to use crlibm for certain math operations. Defaults to ``yes`` (any other value will disable crlibm).
