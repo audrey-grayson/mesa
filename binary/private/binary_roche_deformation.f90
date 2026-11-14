@@ -46,6 +46,13 @@ module binary_roche_deformation
    logical :: inter_ok = .false., dbg = .false.
    integer :: num_xpts, num_ypts
 
+   ! where a point sits in the (lq, ar) tables; see set_roche_stencil
+   type roche_stencil
+      integer :: ix = 0, jy = 0, jlo = 0
+      real(dp) :: dx = 0d0, y = 0d0
+      real(dp) :: ys(4) = 0d0
+   end type roche_stencil
+
 contains
 
    subroutine build_roche_interpolators
@@ -234,6 +241,7 @@ contains
    end subroutine roche_psi
 
    subroutine roche_fp_ft(id, r, fp, ft, r_polar, r_equatorial, report_ierr, ierr)
+      use utils_lib, only: mesa_error
       integer, intent(in) :: id
       real(dp), intent(in) :: r
       logical, intent(in) :: report_ierr
@@ -241,49 +249,40 @@ contains
       type (auto_diff_real_star_order1), intent(out) :: fp, ft
       integer, intent(out) :: ierr
 
-      type (star_info), pointer :: s
-      type (binary_info), pointer :: b
-      integer :: j, this_star, other_star
-      real(dp) :: r_roche, lq, m1, m2, a, ar
+      type (roche_stencil) :: st, st_nudged
+      real(dp) :: r_roche, lq, ar, ar_nudged, fp_val, ft_val, fp_nudged, ft_nudged
 
       include 'formats'
 
       if (.not. inter_ok) then
          write(*, 1) "interpolators not setup, should happen in startup"
-         stop
+         call mesa_error(__FILE__, __LINE__)
       end if
 
-      ierr = 0
-      call star_ptr(id, s, ierr)
+      call get_roche_params(id, lq, r_roche, ierr)
       if (ierr /= 0) return
-      call binary_ptr(s% binary_id, b, ierr)
-      if (ierr /= 0) return
-
-      this_star = 0
-      other_star = 0
-      call assign_stars(id, this_star, other_star, ierr)
-      if (ierr /= 0) return
-
-      m1 = b% m(this_star)
-      m2 = b% m(other_star)
-      a = b% separation
-      r_roche = b% rl(this_star)
-      ! if masses or sep are not yet set at the binary level, use these
-      if (m1 <= 0) m1 = b% m1 * Msun
-      if (m2 <= 0) m2 = b% m2 * Msun
-      if (a <= 0) a = pow(standard_cgrav * (m1 + m2) * &
-            pow((b% initial_period_in_days) * 86400, 2) / (4 * pi2), one_third)
-      if (r_roche <= 0) r_roche = eval_rlobe(m1, m2, a)
-      lq = log10(m2 / m1)
 
       ar = r / r_roche
-      ! set values
-      fp = eval_fp(lq, ar, ierr)
-      ft = eval_ft(lq, ar, ierr)
-      ! set log derivatives
-      fp% d1Array(i_lnR_00) = (eval_fp(lq, ar + nudge, ierr) - fp% val) / nudge * ar
-      ft% d1Array(i_lnR_00) = (eval_ft(lq, ar + nudge, ierr) - ft% val) / nudge * ar
-!            if (fp(j) == 0d0 .or. fp(j) == 0d0) write(*, *) j, ar, fp(j), ft(j), ierr  ! debug
+      call clip_roche_ar(ar, ar_nudged)
+
+      ! one bracket at (lq, ar) and one at (lq, ar + nudge), shared by the fp and ft tables
+      call set_roche_stencil(lq, ar, st, ierr)
+      if (ierr == 0) call move_roche_stencil(st, ar_nudged, st_nudged, ierr)
+      if (ierr == 0) call eval_roche_table(fpfunc1d, st, st_nudged, fp_val, fp_nudged, ierr)
+      if (ierr == 0) call eval_roche_table(ftfunc1d, st, st_nudged, ft_val, ft_nudged, ierr)
+      if (ierr /= 0) then
+         write(*, 1) "error in roche_fp_ft", lq, ar
+         ! outside the tables: no tidal correction
+         fp = 1d0
+         ft = 1d0
+      else
+         ! set values
+         fp = fp_val
+         ft = ft_val
+         ! set log derivatives
+         fp% d1Array(i_lnR_00) = (fp_nudged - fp% val) / nudge * ar
+         ft% d1Array(i_lnR_00) = (ft_nudged - ft% val) / nudge * ar
+      end if
       ! fix these to the current radius, they're only used for some wind mass loss enhancement
       r_polar = r
       r_equatorial = r
@@ -293,47 +292,197 @@ contains
       integer, intent(in) :: id
       real(dp), intent(in) :: r00
       type (auto_diff_real_star_order1), intent(out) :: i_rot
+
+      type (roche_stencil) :: st, st_nudged
+      integer :: ierr
+      real(dp) :: r_roche, ar, ar_nudged, lq, eval, eval_nudged, d_eval_d_ar
+
+      include 'formats'
+
+      call get_roche_params(id, lq, r_roche, ierr)
+      if (ierr /= 0) return
+
+      i_rot = 0d0
+
+      if (inter_ok) then
+         ar = r00 / r_roche
+         call clip_roche_ar(ar, ar_nudged)
+         ! one bracket at (lq, ar) and one at (lq, ar + nudge)
+         call set_roche_stencil(lq, ar, st, ierr)
+         if (ierr == 0) call move_roche_stencil(st, ar_nudged, st_nudged, ierr)
+         if (ierr == 0) call eval_roche_table(irotfunc1d, st, st_nudged, eval, eval_nudged, ierr)
+         if (ierr /= 0) then
+            write(*, 1) "error in roche_irot", lq, ar
+            ! outside the tables: spherical moment of inertia
+            eval = 1d0
+            eval_nudged = 1d0
+         end if
+         ! set value
+         d_eval_d_ar = (eval_nudged - eval) / nudge
+         ! scale value with spherical moi (see eval_irot)
+         i_rot = eval * (two_thirds * r00 * r00)
+         ! set radius derivative
+         i_rot% d1Array(i_lnR_00) = two_thirds * r00 * r00 * (ar * d_eval_d_ar + 2 * eval)
+      end if
+   end subroutine roche_irot
+
+   subroutine get_roche_params(id, lq, r_roche, ierr)
+      ! the quantities shared by every Roche-table lookup for star id:
+      ! lq = log10(m(other)/m(this)) and the Roche lobe radius r_roche
+      integer, intent(in) :: id
+      real(dp), intent(out) :: lq, r_roche
+      integer, intent(out) :: ierr
+
       type (star_info), pointer :: s
       type (binary_info), pointer :: b
-      integer :: ierr, j, this_star, other_star
-      real(dp) :: r_roche, a, m1, m2, ar, lq, eval, d_eval_d_ar
+      integer :: this_star, other_star
+      real(dp) :: m1, m2, a
 
       ierr = 0
       call star_ptr(id, s, ierr)
       if (ierr /= 0) return
       call binary_ptr(s% binary_id, b, ierr)
       if (ierr /= 0) return
-
-      this_star = 0
-      other_star = 0
-      call assign_stars(id, this_star, other_star, ierr)
+      call which_star(s, b, this_star, other_star, ierr)
       if (ierr /= 0) return
 
       m1 = b% m(this_star)
       m2 = b% m(other_star)
       a = b% separation
       r_roche = b% rl(this_star)
+      ! if masses or sep are not yet set at the binary level, use these
       if (m1 <= 0d0) m1 = b% m1 * Msun
       if (m2 <= 0d0) m2 = b% m2 * Msun
       if (a <= 0d0) a = pow(standard_cgrav * (m1 + m2) * &
-         pow((b% initial_period_in_days) * secday, 2) / (4d0 * pi2), one_third)
+            pow((b% initial_period_in_days) * secday, 2) / (4d0 * pi2), one_third)
       if (r_roche <= 0d0) r_roche = eval_rlobe(m1, m2, a)
-!
       lq = log10(m2 / m1)
-      i_rot = 0d0
+   end subroutine get_roche_params
 
-      if (inter_ok) then
-         ar = r00 / r_roche
-         ! set value
-         eval = eval_irot(lq, ar, ierr)
-         d_eval_d_ar = (eval_irot(lq, ar + nudge, ierr) - eval) / nudge
-         ! scale value with spherical moi (see eval_irot)
-         i_rot = eval * (two_thirds * r00 * r00)
-         ! set radius derivative
-         i_rot% d1Array(i_lnR_00) = two_thirds * r00 * r00 * (ar * d_eval_d_ar + 2 * eval)
-!         write(*, *) r00, r_roche, i_rot, w_div_w_crit_roche  ! debug
+   subroutine clip_roche_ar(ar, ar_nudged)
+      ! keeps ar, and the point ar + nudge used for the finite-difference derivative,
+      ! below the top of the tables. Same clipping as eval_fp, eval_ft and eval_irot.
+      real(dp), intent(inout) :: ar
+      real(dp), intent(out) :: ar_nudged
+      if (ar >= yvals(num_ypts)) ar = yvals(num_ypts) - 2 * nudge
+      ar_nudged = ar + nudge
+      if (ar_nudged >= yvals(num_ypts)) ar_nudged = yvals(num_ypts) - 2 * nudge
+   end subroutine clip_roche_ar
+
+   ! The routines below split interp_evbipm_db (see interp_2d/private/bipm_db.f90) into
+   ! a bracket search, a fit in y, and an evaluation of that fit. Tables on the same
+   ! (lq, ar) grid can then share one bracket, and the value at ar + nudge can reuse the
+   ! fit made for ar when both use the same four y nodes. The arithmetic is the same as
+   ! in do_evbipm_db, so the results are identical.
+
+   subroutine set_roche_stencil(xget, yget, st, ierr)
+      use num_lib, only: binary_search
+      real(dp), intent(in) :: xget, yget
+      type (roche_stencil), intent(out) :: st
+      integer, intent(out) :: ierr
+
+      type (roche_stencil) :: st_x
+
+      ierr = 0
+      st_x% ix = binary_search(num_xpts, xvals, 0, xget)  ! x(ix) <= xget < x(ix+1)
+      if (st_x% ix < 1 .or. st_x% ix >= num_xpts) then
+         ierr = -1
+         return
       end if
-   end subroutine roche_irot
+      st_x% dx = xget - xvals(st_x% ix)
+      st_x% jy = 0
+      call move_roche_stencil(st_x, yget, st, ierr)
+   end subroutine set_roche_stencil
+
+   subroutine move_roche_stencil(st_in, yget, st, ierr)
+      ! stencil at the same x as st_in, at a new y
+      use num_lib, only: binary_search
+      type (roche_stencil), intent(in) :: st_in
+      real(dp), intent(in) :: yget
+      type (roche_stencil), intent(out) :: st
+      integer, intent(out) :: ierr
+      integer :: i, jy
+
+      ierr = 0
+      jy = binary_search(num_ypts, yvals, st_in% jy, yget)  ! y(jy) <= yget < y(jy+1)
+      if (jy < 1 .or. jy >= num_ypts) then
+         ierr = -1
+         return
+      end if
+      st% ix = st_in% ix
+      st% dx = st_in% dx
+      st% jy = jy
+      st% y = yget
+      if (jy == 1) then
+         st% jlo = 1
+      else if (jy >= num_ypts - 1) then
+         st% jlo = jy - 2
+      else
+         st% jlo = jy - 1
+      end if
+      do i = 1, 4
+         st% ys(i) = yvals(st% jlo + i - 1)
+      end do
+   end subroutine move_roche_stencil
+
+   subroutine fit_roche_table(fin1, st, ff1, ierr)
+      ! evaluates the table in x at the four y nodes of st, then fits a
+      ! monotonic cubic in y through those four values
+      use interp_1d_def, only: pm_work_size
+      use interp_1d_lib, only: interp_pm
+      real(dp), intent(in), pointer :: fin1(:)  ! (4, num_xpts, num_ypts)
+      type (roche_stencil), intent(in) :: st
+      real(dp), intent(inout), pointer :: ff1(:)  ! (4, 4)
+      integer, intent(out) :: ierr
+
+      integer, parameter :: nwork = pm_work_size
+      real(dp), target :: work_ary(4*nwork)
+      real(dp), pointer :: work(:), fin(:,:,:), ff(:,:)
+      real(dp) :: dx
+      integer :: i, j, ix
+
+      work => work_ary
+      ff(1:4, 1:4) => ff1(1:4*4)
+      fin(1:4, 1:num_xpts, 1:num_ypts) => fin1(1:4*num_xpts*num_ypts)
+      ix = st% ix
+      dx = st% dx
+      do i = 1, 4
+         j = st% jlo + i - 1
+         ff(1, i) = fin(1, ix, j) + dx*(fin(2, ix, j) + dx*(fin(3, ix, j) + dx*fin(4, ix, j)))
+      end do
+      call interp_pm(st% ys, 4, ff1, nwork, work, 'fit_roche_table', ierr)
+   end subroutine fit_roche_table
+
+   subroutine eval_roche_table(fin1, st, st_nudged, val, val_nudged, ierr)
+      ! value of one table at st and at st_nudged, which must have the same x
+      use interp_1d_lib, only: interp_values
+      real(dp), intent(in), pointer :: fin1(:)
+      type (roche_stencil), intent(in) :: st, st_nudged
+      real(dp), intent(out) :: val, val_nudged
+      integer, intent(out) :: ierr
+
+      real(dp), target :: ff_ary(4*4)
+      real(dp), pointer :: ff1(:)
+      real(dp) :: ynew(1), v(1)
+
+      ff1 => ff_ary
+      call fit_roche_table(fin1, st, ff1, ierr)
+      if (ierr /= 0) return
+      ynew(1) = st% y
+      call interp_values(st% ys, 4, ff1, 1, ynew, v, ierr)
+      if (ierr /= 0) return
+      val = v(1)
+
+      ! the fit only depends on the four y nodes, so reuse it when they are the same
+      if (st_nudged% jlo /= st% jlo) then
+         call fit_roche_table(fin1, st_nudged, ff1, ierr)
+         if (ierr /= 0) return
+      end if
+      ynew(1) = st_nudged% y
+      call interp_values(st_nudged% ys, 4, ff1, 1, ynew, v, ierr)
+      if (ierr /= 0) return
+      val_nudged = v(1)
+   end subroutine eval_roche_table
 
    subroutine assign_stars(id, this_star, other_star, ierr)
       ! determine which star is which in the binary
@@ -344,10 +493,21 @@ contains
 
       ierr = 0
       call star_ptr(id, s, ierr)
-      call binary_ptr(s% binary_id, b, ierr)
-
       if (ierr /= 0) return
+      call binary_ptr(s% binary_id, b, ierr)
+      if (ierr /= 0) return
+      call which_star(s, b, this_star, other_star, ierr)
+   end subroutine assign_stars
 
+   subroutine which_star(s, b, this_star, other_star, ierr)
+      ! same as assign_stars, for callers that already have s and b
+      type (star_info), pointer :: s
+      type (binary_info), pointer :: b
+      integer, intent(out) :: this_star, other_star, ierr
+
+      ierr = 0
+      this_star = 0
+      other_star = 0
       if (b% s1% id == s% id .and. b% have_star_1) then
          this_star = 1
          other_star = 2
@@ -357,8 +517,7 @@ contains
       else
          ierr = 1
       end if
-
-   end subroutine assign_stars
+   end subroutine which_star
 
    ! determines by what fraction the tidal deformation corrections should be used
    ! eg fp = f_switch * fp_tidal + (1-f_switch) * fp_single

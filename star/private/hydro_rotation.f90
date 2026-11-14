@@ -345,19 +345,37 @@
          type (auto_diff_real_star_order1), intent(out) :: final
 
          real(dp) :: tidal_frac
+
+         call get_tidal_frac(s, k, omega, tidal_frac)
+         call blend_with_tidal_frac(tidal_frac, single, tidal, final)
+      end subroutine blend_tidal_values
+
+      subroutine get_tidal_frac(s, k, omega, tidal_frac)
+         ! how much of the tidal value to use, based on synchronicity
+         type (star_info), pointer :: s
+         integer, intent(in) :: k
+         real(dp), intent(in) :: omega
+         real(dp), intent(out) :: tidal_frac
+
          integer :: ierr
 
          include 'formats'
 
-         ! do blending with tidal case according to synchronicity
          if (associated(s% binary_deformation_switch_fraction)) then
-            call s% binary_deformation_switch_fraction(s% id, k, omega, tidal_frac, ierr)  ! tells how much of the tidal value we should use
+            call s% binary_deformation_switch_fraction(s% id, k, omega, tidal_frac, ierr)
             if (ierr /= 0) then
                if (s% report_ierr) write(*, 1) "failed in blend_tidal_values"
             end if
          end if
+      end subroutine get_tidal_frac
+
+      subroutine blend_with_tidal_frac(tidal_frac, single, tidal, final)
+         use auto_diff
+         real(dp), intent(in) :: tidal_frac
+         type (auto_diff_real_star_order1), intent(in) :: single, tidal
+         type (auto_diff_real_star_order1), intent(out) :: final
          final = tidal_frac * tidal + (1d0 - tidal_frac) * single
-      end subroutine blend_tidal_values
+      end subroutine blend_with_tidal_frac
 
       subroutine use_xh_to_update_i_rot(s)
          type (star_info), pointer :: s
@@ -541,6 +559,7 @@
          integer, intent(out) :: ierr
 
          type (auto_diff_real_star_order1) :: fp_single, fp_tidal, ft_single, ft_tidal
+         real(dp) :: tidal_frac
          integer :: k
          include 'formats'
          ierr = 0
@@ -555,7 +574,7 @@
             call set_omega(s, 'set_rotation_info')
          end if
 
-!$OMP PARALLEL DO PRIVATE(k, fp_single, ft_single, fp_tidal, ft_tidal, ierr) SCHEDULE(dynamic,2)
+!$OMP PARALLEL DO PRIVATE(k, fp_single, ft_single, fp_tidal, ft_tidal, tidal_frac, ierr) SCHEDULE(dynamic,2)
          do k=1, s% nz
             if (s% use_other_eval_fp_ft) then
                call s% other_eval_fp_ft( &
@@ -574,8 +593,10 @@
                   call s% binary_other_fp_ft(&
                         s% id, s% r(k), fp_tidal, ft_tidal, s% r_polar(k), s% r_equatorial(k), &
                         s% report_ierr, ierr)
-                  call blend_tidal_values(s, k, fp_single, fp_tidal, s% omega(k), s% fp_rot(k))
-                  call blend_tidal_values(s, k, ft_single, ft_tidal, s% omega(k), s% ft_rot(k))
+                  ! fp and ft use the same omega, so evaluate the switch function once
+                  call get_tidal_frac(s, k, s% omega(k), tidal_frac)
+                  call blend_with_tidal_frac(tidal_frac, fp_single, fp_tidal, s% fp_rot(k))
+                  call blend_with_tidal_frac(tidal_frac, ft_single, ft_tidal, s% ft_rot(k))
                else
                   s% fp_rot(k) = fp_single
                   s% ft_rot(k) = ft_single
