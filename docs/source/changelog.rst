@@ -160,6 +160,11 @@ Fixed the OPAL/SCVH blend in metallicity, which could cause discontinuities
 in the EOS at ``Z = 0.04`` with the default blend limits. See
 :ref:`the known bugs entry <opal_scvh_high_z_blend_bug>`.
 
+``binary``: ``edot_tidal_Hut`` (``circ_type_1/2 = 'Hut_conv'`` or
+``'Hut_rad'``) scaled the circularisation term of both stars by ``Ftid_1``.
+Star 2's term now uses ``Ftid_2``. Results change only when
+``Ftid_1 /= Ftid_2``.
+
 .. note:: Before releasing a new version of MESA, move `Changes in main` to a new section below with the version number as the title, and add a new `Changes in main` section at the top of the file (see ``changelog_template.rst``).
 
 Other Changes
