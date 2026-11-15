@@ -160,6 +160,12 @@ Fixed the OPAL/SCVH blend in metallicity, which could cause discontinuities
 in the EOS at ``Z = 0.04`` with the default blend limits. See
 :ref:`the known bugs entry <opal_scvh_high_z_blend_bug>`.
 
+``binary``: when skipping the accretor's evolve step on later implicit
+mass-transfer tries (rotation plus implicit winds), the check read
+``was_in_implicit_wind_limit`` from a stale star pointer, which was always
+star 2. It now reads the accretor's flag, as ``adjust_mdots`` does. Results
+change only when star 2 is the donor.
+
 .. note:: Before releasing a new version of MESA, move `Changes in main` to a new section below with the version number as the title, and add a new `Changes in main` section at the top of the file (see ``changelog_template.rst``).
 
 Other Changes
