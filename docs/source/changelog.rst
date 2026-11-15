@@ -160,6 +160,13 @@ Fixed the OPAL/SCVH blend in metallicity, which could cause discontinuities
 in the EOS at ``Z = 0.04`` with the default blend limits. See
 :ref:`the known bugs entry <opal_scvh_high_z_blend_bug>`.
 
+``binary``: the orbit-phase arrays ``theta_co`` and ``time_co`` were only
+filled on a fresh start and are not stored in binary photos, so after a
+restart they held uninitialised memory. They are used to integrate over the
+orbit the tidally enhanced wind (``do_enhance_wind_1/2``), eccentric mass
+transfer and ``use_eccentricity_enhancement``, so restarts of such runs
+did not reproduce the original run. They are now set on restart as well.
+
 .. note:: Before releasing a new version of MESA, move `Changes in main` to a new section below with the version number as the title, and add a new `Changes in main` section at the top of the file (see ``changelog_template.rst``).
 
 Other Changes
