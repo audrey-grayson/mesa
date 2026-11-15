@@ -693,6 +693,13 @@ star_plus_point_mass_explicit_mdot
 Same as above, but run using an explicit calculation for the mass
 transfer rate.
 
+:ref:`restart_tout_wind`
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``star_plus_point_mass`` with a tidally enhanced wind. Verifies that a
+restart from a photo rebuilds the orbit-phase arrays used to integrate
+the wind over the orbit.
+
 :ref:`wind_fed_bhhmxb`
 ^^^^^^^^^^^^^^^^^^^^^^
 
