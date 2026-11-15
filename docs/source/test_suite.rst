@@ -693,6 +693,12 @@ star_plus_point_mass_explicit_mdot
 Same as above, but run using an explicit calculation for the mass
 transfer rate.
 
+:ref:`tidal_circ_ftid`
+^^^^^^^^^^^^^^^^^^^^^^
+
+Two stars in an eccentric orbit with tidal circularisation from
+star 2 only. Verifies that star 2's term is scaled by ``Ftid_2``.
+
 :ref:`wind_fed_bhhmxb`
 ^^^^^^^^^^^^^^^^^^^^^^
 
